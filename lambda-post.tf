@@ -15,7 +15,7 @@ resource "aws_lambda_function" "create-url-lambda" {
 
   environment {
     variables = {
-    #   DDB_TABLE = aws_dynamodb_table.table.name
+      #   DDB_TABLE = aws_dynamodb_table.table.name
     }
   }
 }
