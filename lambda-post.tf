@@ -8,7 +8,7 @@ resource "aws_lambda_function" "create-url-lambda" {
   filename         = data.archive_file.lambda_zip.output_path
   function_name    = "${local.name_prefix}-create-url-lambda"
   description      = "Lambda function to write to dynamodb"
-  runtime          = "python3.13"
+  runtime          = "python3.12"
   handler          = "app.lambda_handler"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
   role             = aws_iam_role.create-url-lambda-exec.arn
