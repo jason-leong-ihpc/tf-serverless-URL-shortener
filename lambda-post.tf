@@ -52,7 +52,7 @@ resource "aws_iam_policy" "create-url-lambda-exec-role" {
                 "dynamodb:DeleteItem",
                 "dynamodb:Scan"
             ],
-            "Resource": "${aws_dynamodb_table.table.arn}"
+            "Resource": "${aws_dynamodb_table.shortener_table.arn}"
         },
         {
             "Effect": "Allow",
