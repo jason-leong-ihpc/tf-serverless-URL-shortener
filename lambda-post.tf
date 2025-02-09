@@ -1,27 +1,27 @@
 data "archive_file" "lambda_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/retrieve-url-lambda"
-  output_path = "${path.module}/retrieve-url-lambda.zip"
+  source_dir  = "${path.module}/create-url-lambda"
+  output_path = "${path.module}/create-url-lambda.zip"
 }
 
-resource "aws_lambda_function" "http_api_lambda" {
+resource "aws_lambda_function" "create-url-lambda" {
   filename         = data.archive_file.lambda_zip.output_path
-  function_name    = "${local.name_prefix}-retrieve-url-lambda"
-  description      = "Lambda function to read from dynamodb"
+  function_name    = "${local.name_prefix}-create-url-lambda"
+  description      = "Lambda function to write to dynamodb"
   runtime          = "python3.12"
   handler          = "app.lambda_handler"
   source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-  role             = aws_iam_role.lambda_exec.arn
+  role             = aws_iam_role.create-url-lambda-exec.arn
 
   environment {
     variables = {
-      DDB_TABLE = "" # todo: fill with apporpriate value
+      #   DDB_TABLE = aws_dynamodb_table.table.name
     }
   }
 }
 
-resource "aws_iam_role" "lambda_exec" {
-  name = "${local.name_prefix}-api-executionrole"
+resource "aws_iam_role" "create-url-lambda-exec" {
+  name = "${local.name_prefix}-create-url-lambda-executionrole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -37,8 +37,8 @@ resource "aws_iam_role" "lambda_exec" {
   })
 }
 
-resource "aws_iam_policy" "lambda_exec_role" {
-  name = "${local.name_prefix}-api-ddbaccess"
+resource "aws_iam_policy" "create-url-lambda-exec-role" {
+  name = "${local.name_prefix}-create-url-lambda-ddbaccess"
 
   policy = <<POLICY
 {
@@ -48,6 +48,8 @@ resource "aws_iam_policy" "lambda_exec_role" {
             "Effect": "Allow",
             "Action": [
                 "dynamodb:GetItem",
+                "dynamodb:PutItem",
+                "dynamodb:DeleteItem",
                 "dynamodb:Scan"
             ],
             "Resource": "${aws_dynamodb_table.shortener_table.arn}"
@@ -60,6 +62,14 @@ resource "aws_iam_policy" "lambda_exec_role" {
                 "logs:PutLogEvents"
             ],
             "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords"
+            ],
+            "Resource": "*"
         }
     ]
 }
@@ -67,15 +77,6 @@ POLICY
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_policy" {
-  role       = aws_iam_role.lambda_exec.name
-  policy_arn = aws_iam_policy.lambda_exec_role.arn
+  role       = aws_iam_role.create-url-lambda-exec.name
+  policy_arn = aws_iam_policy.create-url-lambda-exec-role.arn
 }
-
-# resource "aws_cloudwatch_log_group" "lambda_log_group" {
-#   name              = "/aws/lambda/${aws_lambda_function.http_api_lambda.function_name}"
-#   retention_in_days = 7
-
-#   lifecycle {
-#     create_before_destroy = false
-#   }
-# }
